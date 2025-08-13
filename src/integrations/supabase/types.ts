@@ -14,24 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      Laundry: {
+      laundry_entries: {
         Row: {
           created_at: string
-          "In Amt.": number
-          "Out Amt": number
-          "Signed by": string
+          id: string
+          notes: string | null
+          signed_by: string
+          type: string
+          updated_at: string
+          user_id: string
+          weight: number
         }
         Insert: {
           created_at?: string
-          "In Amt."?: number
-          "Out Amt"?: number
-          "Signed by"?: string
+          id?: string
+          notes?: string | null
+          signed_by: string
+          type: string
+          updated_at?: string
+          user_id: string
+          weight: number
         }
         Update: {
           created_at?: string
-          "In Amt."?: number
-          "Out Amt"?: number
-          "Signed by"?: string
+          id?: string
+          notes?: string | null
+          signed_by?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number
         }
         Relationships: []
       }
