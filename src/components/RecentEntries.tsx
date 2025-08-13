@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { LaundryEntry } from "@/types/laundry";
 import { Clock, TrendingDown, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+import { sanitizeHtml } from "@/lib/security";
 
 interface RecentEntriesProps {
   entries: LaundryEntry[];
@@ -55,11 +56,11 @@ export const RecentEntries = ({ entries }: RecentEntriesProps) => {
                       <span className="font-semibold">{entry.weight} kg</span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Signed by {entry.signedBy}
+                      Signed by {sanitizeHtml(entry.signedBy)}
                     </div>
                     {entry.notes && (
                       <div className="text-sm text-muted-foreground italic mt-1">
-                        "{entry.notes}"
+                        "{sanitizeHtml(entry.notes)}"
                       </div>
                     )}
                   </div>

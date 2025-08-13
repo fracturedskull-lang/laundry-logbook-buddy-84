@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { LaundryEntry } from "@/types/laundry";
-import { Plus } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { sanitizeTextInput, sanitizeWeight, formRateLimiter } from "@/lib/security";
 
 interface LaundryEntryFormProps {
   onAddEntry: (entry: Omit<LaundryEntry, 'id' | 'timestamp'>) => Promise<void>;
@@ -18,12 +19,36 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
   const [weight, setWeight] = useState('');
   const [signedBy, setSignedBy] = useState('');
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!weight || !signedBy) {
+    // Rate limiting check
+    if (!formRateLimiter.canSubmit()) {
+      const timeLeft = Math.ceil(formRateLimiter.getTimeUntilNext() / 1000);
+      setCooldownTime(timeLeft);
+      const interval = setInterval(() => {
+        setCooldownTime(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      toast({
+        title: "Please Wait",
+        description: `Too many requests. Please wait ${timeLeft} seconds before submitting again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!weight || !signedBy.trim()) {
       toast({
         title: "Missing Information",
         description: "Please fill in weight and signature fields.",
@@ -42,12 +67,17 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
+      // Sanitize inputs before sending
+      const sanitizedSignedBy = sanitizeTextInput(signedBy);
+      const sanitizedNotes = notes.trim() ? sanitizeTextInput(notes) : undefined;
+      
       await onAddEntry({
         type,
         weight: weightNum,
-        signedBy: signedBy.trim(),
-        notes: notes.trim() || undefined,
+        signedBy: sanitizedSignedBy,
+        notes: sanitizedNotes,
       });
 
       // Reset form only on success
@@ -60,7 +90,13 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
         description: `${type === 'incoming' ? 'Incoming' : 'Outgoing'} laundry logged successfully.`,
       });
     } catch (error) {
-      // Error is handled by the parent component
+      toast({
+        title: "Error",
+        description: "Failed to add entry. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,7 +133,7 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
                 step="0.1"
                 min="0"
                 value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                onChange={(e) => setWeight(sanitizeWeight(e.target.value))}
                 placeholder="Enter weight in kg"
               />
             </div>
@@ -107,7 +143,8 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
               <Input
                 id="signedBy"
                 value={signedBy}
-                onChange={(e) => setSignedBy(e.target.value)}
+                onChange={(e) => setSignedBy(sanitizeTextInput(e.target.value))}
+                maxLength={100}
                 placeholder="Enter name"
               />
             </div>
@@ -118,14 +155,34 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
             <Textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => setNotes(sanitizeTextInput(e.target.value))}
+              maxLength={500}
               placeholder="Additional notes..."
               rows={3}
             />
           </div>
 
-          <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90">
-            Log Entry
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || cooldownTime > 0} 
+            className="w-full bg-gradient-primary hover:opacity-90"
+          >
+            {cooldownTime > 0 ? (
+              <>
+                <Clock className="mr-2 h-4 w-4" />
+                Wait {cooldownTime}s
+              </>
+            ) : isSubmitting ? (
+              <>
+                <Plus className="mr-2 h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Log Entry
+              </>
+            )}
           </Button>
         </form>
       </CardContent>
