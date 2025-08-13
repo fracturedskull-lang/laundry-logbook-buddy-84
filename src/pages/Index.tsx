@@ -1,12 +1,21 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { LaundryEntry, LaundryStats } from "@/types/laundry";
 import { StatsCard } from "@/components/StatsCard";
 import { LaundryEntryForm } from "@/components/LaundryEntryForm";
 import { RecentEntries } from "@/components/RecentEntries";
-import { Scale, TrendingUp, TrendingDown, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Scale, TrendingUp, TrendingDown, Package, LogOut } from "lucide-react";
 
 const Index = () => {
   const [entries, setEntries] = useState<LaundryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const stats: LaundryStats = useMemo(() => {
     const totalIncoming = entries
@@ -25,25 +34,129 @@ const Index = () => {
     };
   }, [entries]);
 
-  const handleAddEntry = (entryData: Omit<LaundryEntry, 'id' | 'timestamp'>) => {
-    const newEntry: LaundryEntry = {
-      ...entryData,
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-    };
-    setEntries(prev => [...prev, newEntry]);
+  // Check authentication
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  // Load entries from database
+  useEffect(() => {
+    if (user) {
+      loadEntries();
+    }
+  }, [user]);
+
+  const loadEntries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("laundry_entries")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const formattedEntries: LaundryEntry[] = data.map(entry => ({
+        id: entry.id,
+        type: entry.type as 'incoming' | 'outgoing',
+        weight: Number(entry.weight),
+        signedBy: entry.signed_by,
+        timestamp: new Date(entry.created_at),
+        notes: entry.notes || undefined,
+      }));
+
+      setEntries(formattedEntries);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load laundry entries.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleAddEntry = async (entryData: Omit<LaundryEntry, 'id' | 'timestamp'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("laundry_entries")
+        .insert({
+          user_id: user.id,
+          type: entryData.type,
+          weight: entryData.weight,
+          signed_by: entryData.signedBy,
+          notes: entryData.notes,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newEntry: LaundryEntry = {
+        id: data.id,
+        type: data.type as 'incoming' | 'outgoing',
+        weight: Number(data.weight),
+        signedBy: data.signed_by,
+        timestamp: new Date(data.created_at),
+        notes: data.notes || undefined,
+      };
+
+      setEntries(prev => [newEntry, ...prev]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add laundry entry.",
+        variant: "destructive",
+      });
+      throw error; // Re-throw so the form can handle it
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to auth
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-primary text-primary-foreground py-8">
         <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-2">Laundry Logbook</h1>
-            <p className="text-primary-foreground/80 text-lg">
-              Professional laundry tracking and management system
-            </p>
+          <div className="flex justify-between items-center">
+            <div className="text-center flex-1">
+              <h1 className="text-4xl font-bold mb-2">Laundry Logbook</h1>
+              <p className="text-primary-foreground/80 text-lg">
+                Professional laundry tracking and management system
+              </p>
+            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="ml-4 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </div>

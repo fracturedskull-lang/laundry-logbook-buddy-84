@@ -10,7 +10,7 @@ import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LaundryEntryFormProps {
-  onAddEntry: (entry: Omit<LaundryEntry, 'id' | 'timestamp'>) => void;
+  onAddEntry: (entry: Omit<LaundryEntry, 'id' | 'timestamp'>) => Promise<void>;
 }
 
 export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
@@ -20,7 +20,7 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!weight || !signedBy) {
@@ -42,22 +42,26 @@ export const LaundryEntryForm = ({ onAddEntry }: LaundryEntryFormProps) => {
       return;
     }
 
-    onAddEntry({
-      type,
-      weight: weightNum,
-      signedBy: signedBy.trim(),
-      notes: notes.trim() || undefined,
-    });
+    try {
+      await onAddEntry({
+        type,
+        weight: weightNum,
+        signedBy: signedBy.trim(),
+        notes: notes.trim() || undefined,
+      });
 
-    // Reset form
-    setWeight('');
-    setSignedBy('');
-    setNotes('');
-    
-    toast({
-      title: "Entry Added",
-      description: `${type === 'incoming' ? 'Incoming' : 'Outgoing'} laundry logged successfully.`,
-    });
+      // Reset form only on success
+      setWeight('');
+      setSignedBy('');
+      setNotes('');
+      
+      toast({
+        title: "Entry Added",
+        description: `${type === 'incoming' ? 'Incoming' : 'Outgoing'} laundry logged successfully.`,
+      });
+    } catch (error) {
+      // Error is handled by the parent component
+    }
   };
 
   return (
