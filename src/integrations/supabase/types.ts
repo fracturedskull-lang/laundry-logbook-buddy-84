@@ -7,43 +7,198 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      laundry_entries: {
+      customers: {
         Row: {
-          created_at: string
+          created_at: string | null
+          email: string | null
           id: string
+          name: string
           notes: string | null
-          signed_by: string
-          type: string
-          updated_at: string
-          user_id: string
-          weight: number
+          phone: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
+          email?: string | null
           id?: string
+          name: string
           notes?: string | null
-          signed_by: string
-          type: string
-          updated_at?: string
-          user_id: string
-          weight: number
+          phone: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
+          email?: string | null
           id?: string
+          name?: string
           notes?: string | null
-          signed_by?: string
+          phone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          detergent_used: string | null
+          end_time: string | null
+          id: string
+          load_weight: number | null
+          machine_id: string | null
+          notes: string | null
+          start_time: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          detergent_used?: string | null
+          end_time?: string | null
+          id?: string
+          load_weight?: number | null
+          machine_id?: string | null
+          notes?: string | null
+          start_time?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          detergent_used?: string | null
+          end_time?: string | null
+          id?: string
+          load_weight?: number | null
+          machine_id?: string | null
+          notes?: string | null
+          start_time?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machines: {
+        Row: {
+          capacity_kg: number
+          created_at: string | null
+          id: string
+          last_service_date: string | null
+          machine_number: number
+          status: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity_kg: number
+          created_at?: string | null
+          id?: string
+          last_service_date?: string | null
+          machine_number: number
+          status?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity_kg?: number
+          created_at?: string | null
+          id?: string
+          last_service_date?: string | null
+          machine_number?: number
+          status?: string | null
           type?: string
-          updated_at?: string
-          user_id?: string
-          weight?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string | null
+          id: string
+          job_id: string
+          method: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          job_id: string
+          method: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          job_id?: string
+          method?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          password_hash: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          password_hash: string
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          password_hash?: string
+          role?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -52,7 +207,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
