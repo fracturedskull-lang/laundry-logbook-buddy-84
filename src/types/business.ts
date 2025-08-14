@@ -13,6 +13,7 @@ export interface Machine {
   id: string;
   machine_number: number;
   type: string;
+  name: string;
   capacity_kg: number;
   status: string;
   last_service_date?: string;
@@ -29,6 +30,7 @@ export interface Job {
   load_weight: number;
   detergent_used: string;
   status: string;
+  payment_status: string;
   start_time?: string;
   end_time?: string;
   notes?: string;

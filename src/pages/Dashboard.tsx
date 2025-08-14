@@ -82,7 +82,7 @@ const Dashboard = () => {
             <Cog className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.idleMachines || 0}</div>
+            <div className="text-2xl font-bold">{stats?.availableMachines || 0}</div>
             <p className="text-xs text-muted-foreground">Ready for use</p>
           </CardContent>
         </Card>
@@ -131,7 +131,7 @@ const Dashboard = () => {
                     <div>
                       <p className="font-medium">{job.customer?.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {job.machine?.name} • {job.weight}kg • {job.detergent}
+                        {job.machine?.name} • {job.load_weight}kg • {job.detergent_used}
                       </p>
                     </div>
                     <Badge variant={job.payment_status === 'paid' ? 'default' : 'secondary'}>
@@ -167,8 +167,8 @@ const Dashboard = () => {
                 {machines.map((machine) => (
                   <div key={machine.id} className="flex items-center justify-between p-4 rounded-lg border">
                     <div className="flex items-center gap-3">
-                      {machine.status === 'idle' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                      {machine.status === 'running' && <Clock className="h-5 w-5 text-orange-500" />}
+                      {machine.status === 'available' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                      {machine.status === 'in_use' && <Clock className="h-5 w-5 text-orange-500" />}
                       {machine.status === 'maintenance' && <AlertCircle className="h-5 w-5 text-red-500" />}
                       <div>
                         <p className="font-medium">{machine.name}</p>
@@ -177,8 +177,8 @@ const Dashboard = () => {
                     </div>
                     <Badge 
                       variant={
-                        machine.status === 'idle' ? 'default' : 
-                        machine.status === 'running' ? 'secondary' : 
+                        machine.status === 'available' ? 'default' : 
+                        machine.status === 'in_use' ? 'secondary' : 
                         'destructive'
                       }
                     >

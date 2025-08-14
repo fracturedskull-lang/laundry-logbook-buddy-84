@@ -53,7 +53,8 @@ const Payments = () => {
       const paymentData = {
         job_id: formData.job_id,
         amount: parseFloat(formData.amount),
-        method: formData.method
+        method: formData.method,
+        date: new Date().toISOString()
       };
 
       if (paymentData.amount <= 0) {
@@ -111,7 +112,7 @@ const Payments = () => {
                   <SelectContent>
                     {unpaidJobs.map((job) => (
                       <SelectItem key={job.id} value={job.id}>
-                        {job.customer?.name} - {job.machine?.name} ({job.weight}kg)
+                        {job.customer?.name} - {job.machine?.name} ({job.load_weight}kg)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -189,7 +190,7 @@ const Payments = () => {
                       {payment.job?.customer?.name} - {payment.job?.machine?.name}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {payment.job?.weight}kg • {payment.job?.detergent}
+                      {payment.job?.load_weight}kg • {payment.job?.detergent_used}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(payment.created_at).toLocaleString()}

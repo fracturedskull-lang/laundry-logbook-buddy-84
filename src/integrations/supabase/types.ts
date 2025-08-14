@@ -54,6 +54,7 @@ export type Database = {
           load_weight: number | null
           machine_id: string | null
           notes: string | null
+          payment_status: string | null
           start_time: string | null
           status: string | null
           updated_at: string | null
@@ -67,6 +68,7 @@ export type Database = {
           load_weight?: number | null
           machine_id?: string | null
           notes?: string | null
+          payment_status?: string | null
           start_time?: string | null
           status?: string | null
           updated_at?: string | null
@@ -80,11 +82,26 @@ export type Database = {
           load_weight?: number | null
           machine_id?: string | null
           notes?: string | null
+          payment_status?: string | null
           start_time?: string | null
           status?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_jobs_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_jobs_machine"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jobs_customer_id_fkey"
             columns: ["customer_id"]
@@ -108,6 +125,7 @@ export type Database = {
           id: string
           last_service_date: string | null
           machine_number: number
+          name: string
           status: string | null
           type: string
           updated_at: string | null
@@ -118,6 +136,7 @@ export type Database = {
           id?: string
           last_service_date?: string | null
           machine_number: number
+          name: string
           status?: string | null
           type: string
           updated_at?: string | null
@@ -128,6 +147,7 @@ export type Database = {
           id?: string
           last_service_date?: string | null
           machine_number?: number
+          name?: string
           status?: string | null
           type?: string
           updated_at?: string | null
@@ -160,6 +180,13 @@ export type Database = {
           method?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_payments_job"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_job_id_fkey"
             columns: ["job_id"]

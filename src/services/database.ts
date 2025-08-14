@@ -41,9 +41,14 @@ export const fetchMachines = async () => {
 };
 
 export const addMachine = async (machine: Omit<Machine, 'id' | 'created_at' | 'updated_at'>) => {
+  const machineData = {
+    ...machine,
+    name: `${machine.type} #${machine.machine_number}`
+  };
+
   const { data, error } = await supabase
     .from("machines")
-    .insert(machine)
+    .insert(machineData)
     .select()
     .single();
 
@@ -132,6 +137,7 @@ export const fetchPayments = async () => {
 };
 
 export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_at' | 'job'>) => {
+  // Start a transaction to record payment and update job status
   const { data, error } = await supabase
     .from("payments")
     .insert(paymentData)
@@ -146,6 +152,15 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_a
     .single();
 
   if (error) throw error;
+
+  // Update the job's payment status to 'paid'
+  const { error: updateError } = await supabase
+    .from("jobs")
+    .update({ payment_status: 'paid' })
+    .eq("id", paymentData.job_id);
+
+  if (updateError) throw updateError;
+
   return data as Payment;
 };
 
@@ -167,7 +182,7 @@ export const fetchDashboardStats = async () => {
   return {
     activeJobs: jobs.filter(j => j.status === 'active' || j.status === 'pending').length,
     availableMachines: machines.filter(m => m.status === 'available').length,
-    runningMachines: machines.filter(m => m.status === 'running' || m.status === 'in_use').length,
+    runningMachines: machines.filter(m => m.status === 'in_use').length,
     maintenanceMachines: machines.filter(m => m.status === 'maintenance').length,
     totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
     todayRevenue: todayPayments.reduce((sum, p) => sum + p.amount, 0)
