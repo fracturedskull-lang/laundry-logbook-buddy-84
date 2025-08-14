@@ -3,18 +3,21 @@ export interface Customer {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
+  notes?: string;
   created_at: string;
-  user_id: string;
+  updated_at: string;
 }
 
 export interface Machine {
   id: string;
-  name: string;
-  status: 'idle' | 'running' | 'maintenance';
-  current_job_id?: string;
+  machine_number: number;
+  type: string;
+  capacity_kg: number;
+  status: string;
+  last_service_date?: string;
   created_at: string;
-  user_id: string;
+  updated_at: string;
 }
 
 export interface Job {
@@ -23,13 +26,14 @@ export interface Job {
   customer?: Customer;
   machine_id: string;
   machine?: Machine;
-  weight: number;
-  detergent: string;
-  status: 'active' | 'completed' | 'cancelled';
-  payment_status: 'pending' | 'paid';
+  load_weight: number;
+  detergent_used: string;
+  status: string;
+  start_time?: string;
+  end_time?: string;
+  notes?: string;
   created_at: string;
-  completed_at?: string;
-  user_id: string;
+  updated_at: string;
 }
 
 export interface Payment {
@@ -37,14 +41,14 @@ export interface Payment {
   job_id: string;
   job?: Job;
   amount: number;
-  method: 'cash' | 'card' | 'mobile';
+  method: string;
+  date: string;
   created_at: string;
-  user_id: string;
 }
 
 export interface DashboardStats {
   activeJobs: number;
-  idleMachines: number;
+  availableMachines: number;
   runningMachines: number;
   maintenanceMachines: number;
   totalRevenue: number;

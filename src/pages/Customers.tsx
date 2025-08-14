@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { fetchCustomers, addCustomer } from "@/services/database";
 import { Customer } from "@/types/business";
-import { sanitizeInput } from "@/lib/security";
+import { sanitizeTextInput } from "@/lib/security";
 import { Users, Plus, Search } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -47,9 +47,9 @@ const Customers = () => {
 
     try {
       const sanitizedData = {
-        name: sanitizeInput(formData.name),
-        email: sanitizeInput(formData.email),
-        phone: formData.phone ? sanitizeInput(formData.phone) : undefined
+        name: sanitizeTextInput(formData.name),
+        email: sanitizeTextInput(formData.email),
+        phone: sanitizeTextInput(formData.phone)
       };
 
       await addCustomer(sanitizedData);
@@ -118,14 +118,15 @@ const Customers = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">Phone *</Label>
                 <Input
                   id="phone"
                   type="tel"
                   maxLength={20}
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="Phone number (optional)"
+                  placeholder="Phone number"
+                  required
                 />
               </div>
               <div className="flex gap-4">
@@ -177,9 +178,7 @@ const Customers = () => {
                   <CardContent className="p-4">
                     <h3 className="font-semibold">{customer.name}</h3>
                     <p className="text-sm text-muted-foreground">{customer.email}</p>
-                    {customer.phone && (
-                      <p className="text-sm text-muted-foreground">{customer.phone}</p>
-                    )}
+                    <p className="text-sm text-muted-foreground">{customer.phone}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       Added {new Date(customer.created_at).toLocaleDateString()}
                     </p>

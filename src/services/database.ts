@@ -18,13 +18,10 @@ export const fetchCustomers = async (searchQuery?: string) => {
   return data as Customer[];
 };
 
-export const addCustomer = async (customer: Omit<Customer, 'id' | 'created_at' | 'user_id'>) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
+export const addCustomer = async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
   const { data, error } = await supabase
     .from("customers")
-    .insert({ ...customer, user_id: user.id })
+    .insert(customer)
     .select()
     .single();
 
@@ -37,19 +34,16 @@ export const fetchMachines = async () => {
   const { data, error } = await supabase
     .from("machines")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("machine_number", { ascending: true });
 
   if (error) throw error;
   return data as Machine[];
 };
 
-export const addMachine = async (name: string) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
+export const addMachine = async (machine: Omit<Machine, 'id' | 'created_at' | 'updated_at'>) => {
   const { data, error } = await supabase
     .from("machines")
-    .insert({ name, status: 'idle', user_id: user.id })
+    .insert(machine)
     .select()
     .single();
 
@@ -57,10 +51,10 @@ export const addMachine = async (name: string) => {
   return data as Machine;
 };
 
-export const updateMachineStatus = async (machineId: string, status: Machine['status'], currentJobId?: string) => {
+export const updateMachineStatus = async (machineId: string, status: string) => {
   const { data, error } = await supabase
     .from("machines")
-    .update({ status, current_job_id: currentJobId })
+    .update({ status })
     .eq("id", machineId)
     .select()
     .single();
@@ -70,7 +64,7 @@ export const updateMachineStatus = async (machineId: string, status: Machine['st
 };
 
 // Jobs
-export const fetchJobs = async (status?: Job['status']) => {
+export const fetchJobs = async (status?: string) => {
   let query = supabase
     .from("jobs")
     .select(`
@@ -89,24 +83,10 @@ export const fetchJobs = async (status?: Job['status']) => {
   return data as Job[];
 };
 
-export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'user_id' | 'customer' | 'machine'>) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  // Check if machine is available
-  const { data: machine } = await supabase
-    .from("machines")
-    .select("status")
-    .eq("id", jobData.machine_id)
-    .single();
-
-  if (machine?.status !== 'idle') {
-    throw new Error("Machine is not available");
-  }
-
+export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'updated_at' | 'customer' | 'machine'>) => {
   const { data, error } = await supabase
     .from("jobs")
-    .insert({ ...jobData, user_id: user.id })
+    .insert(jobData)
     .select(`
       *,
       customer:customers(*),
@@ -115,27 +95,22 @@ export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'user_i
     .single();
 
   if (error) throw error;
-
-  // Update machine status
-  await updateMachineStatus(jobData.machine_id, 'running', data.id);
-
   return data as Job;
 };
 
 export const completeJob = async (jobId: string) => {
-  const { data: job, error: jobError } = await supabase
+  const { data, error } = await supabase
     .from("jobs")
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .update({ 
+      status: 'completed', 
+      end_time: new Date().toISOString() 
+    })
     .eq("id", jobId)
-    .select("machine_id")
+    .select()
     .single();
 
-  if (jobError) throw jobError;
-
-  // Update machine status back to idle
-  await updateMachineStatus(job.machine_id, 'idle');
-
-  return job;
+  if (error) throw error;
+  return data;
 };
 
 // Payments
@@ -156,13 +131,10 @@ export const fetchPayments = async () => {
   return data as Payment[];
 };
 
-export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_at' | 'user_id' | 'job'>) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
+export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_at' | 'job'>) => {
   const { data, error } = await supabase
     .from("payments")
-    .insert({ ...paymentData, user_id: user.id })
+    .insert(paymentData)
     .select(`
       *,
       job:jobs(
@@ -174,13 +146,6 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_a
     .single();
 
   if (error) throw error;
-
-  // Update job payment status
-  await supabase
-    .from("jobs")
-    .update({ payment_status: 'paid' })
-    .eq("id", paymentData.job_id);
-
   return data as Payment;
 };
 
@@ -200,9 +165,9 @@ export const fetchDashboardStats = async () => {
   const todayPayments = payments.filter(p => p.created_at.startsWith(today));
 
   return {
-    activeJobs: jobs.filter(j => j.status === 'active').length,
-    idleMachines: machines.filter(m => m.status === 'idle').length,
-    runningMachines: machines.filter(m => m.status === 'running').length,
+    activeJobs: jobs.filter(j => j.status === 'active' || j.status === 'pending').length,
+    availableMachines: machines.filter(m => m.status === 'available').length,
+    runningMachines: machines.filter(m => m.status === 'running' || m.status === 'in_use').length,
     maintenanceMachines: machines.filter(m => m.status === 'maintenance').length,
     totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
     todayRevenue: todayPayments.reduce((sum, p) => sum + p.amount, 0)

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { fetchCustomers, fetchMachines, createJob } from "@/services/database";
 import { Customer, Machine } from "@/types/business";
-import { sanitizeInput } from "@/lib/security";
+import { sanitizeTextInput } from "@/lib/security";
 import { Plus } from "lucide-react";
 
 const NewJob = () => {
@@ -18,8 +18,8 @@ const NewJob = () => {
   const [formData, setFormData] = useState({
     customer_id: "",
     machine_id: "",
-    weight: "",
-    detergent: ""
+    load_weight: "",
+    detergent_used: ""
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -37,7 +37,7 @@ const NewJob = () => {
       ]);
       
       setCustomers(customersData);
-      setMachines(machinesData.filter(m => m.status === 'idle'));
+      setMachines(machinesData.filter(m => m.status === 'available'));
     } catch (error) {
       toast({
         title: "Error",
@@ -55,13 +55,13 @@ const NewJob = () => {
       const sanitizedData = {
         customer_id: formData.customer_id,
         machine_id: formData.machine_id,
-        weight: parseFloat(formData.weight),
-        detergent: sanitizeInput(formData.detergent),
-        status: 'active' as const,
-        payment_status: 'pending' as const
+        load_weight: parseFloat(formData.load_weight),
+        detergent_used: sanitizeTextInput(formData.detergent_used),
+        status: 'pending',
+        start_time: new Date().toISOString()
       };
 
-      if (sanitizedData.weight <= 0) {
+      if (sanitizedData.load_weight <= 0) {
         throw new Error("Weight must be greater than 0");
       }
 
@@ -131,7 +131,7 @@ const NewJob = () => {
                 <SelectContent>
                   {machines.map((machine) => (
                     <SelectItem key={machine.id} value={machine.id}>
-                      {machine.name} (Available)
+                      Machine #{machine.machine_number} - {machine.type} ({machine.capacity_kg}kg)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -146,8 +146,8 @@ const NewJob = () => {
                 step="0.1"
                 min="0.1"
                 max="50"
-                value={formData.weight}
-                onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                value={formData.load_weight}
+                onChange={(e) => setFormData({...formData, load_weight: e.target.value})}
                 placeholder="Enter weight in kg"
                 required
               />
@@ -159,8 +159,8 @@ const NewJob = () => {
                 id="detergent"
                 type="text"
                 maxLength={50}
-                value={formData.detergent}
-                onChange={(e) => setFormData({...formData, detergent: e.target.value})}
+                value={formData.detergent_used}
+                onChange={(e) => setFormData({...formData, detergent_used: e.target.value})}
                 placeholder="Enter detergent type"
                 required
               />
