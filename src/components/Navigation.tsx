@@ -10,7 +10,8 @@ import {
   DollarSign, 
   BarChart3, 
   Cog,
-  LogOut 
+  LogOut,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const Navigation = () => {
     { path: "/machines", icon: Cog, label: "Machines" },
     { path: "/payments", icon: DollarSign, label: "Payments" },
     { path: "/reports", icon: BarChart3, label: "Reports" },
+    { path: "/user-management", icon: Shield, label: "User Management" },
     { path: "/settings", icon: SettingsIcon, label: "Settings" },
   ];
 
