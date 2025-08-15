@@ -69,8 +69,8 @@ export const fetchJobs = async (status?: string) => {
     .from("jobs")
     .select(`
       *,
-      customer:customer_id(*),
-      machine:machine_id(*)
+      customers!jobs_customer_id_fkey(*),
+      machines!jobs_machine_id_fkey(*)
     `)
     .order("created_at", { ascending: false });
 
@@ -80,7 +80,15 @@ export const fetchJobs = async (status?: string) => {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as Job[];
+  
+  // Transform the data to match our Job interface
+  const transformedData = data.map(job => ({
+    ...job,
+    customer: job.customers,
+    machine: job.machines
+  }));
+
+  return transformedData as Job[];
 };
 
 export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'updated_at' | 'customer' | 'machine'>) => {
@@ -89,13 +97,21 @@ export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'update
     .insert(jobData)
     .select(`
       *,
-      customer:customer_id(*),
-      machine:machine_id(*)
+      customers!jobs_customer_id_fkey(*),
+      machines!jobs_machine_id_fkey(*)
     `)
     .single();
 
   if (error) throw error;
-  return data as Job;
+  
+  // Transform the data to match our Job interface
+  const transformedData = {
+    ...data,
+    customer: data.customers,
+    machine: data.machines
+  };
+
+  return transformedData as Job;
 };
 
 export const completeJob = async (jobId: string) => {
@@ -119,16 +135,27 @@ export const fetchPayments = async () => {
     .from("payments")
     .select(`
       *,
-      job:job_id(
+      jobs!payments_job_id_fkey(
         *,
-        customer:customer_id(*),
-        machine:machine_id(*)
+        customers!jobs_customer_id_fkey(*),
+        machines!jobs_machine_id_fkey(*)
       )
     `)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data as Payment[];
+  
+  // Transform the data to match our Payment interface
+  const transformedData = data.map(payment => ({
+    ...payment,
+    job: {
+      ...payment.jobs,
+      customer: payment.jobs.customers,
+      machine: payment.jobs.machines
+    }
+  }));
+
+  return transformedData as Payment[];
 };
 
 export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_at' | 'job'>) => {
@@ -138,10 +165,10 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_a
     .insert(paymentData)
     .select(`
       *,
-      job:job_id(
+      jobs!payments_job_id_fkey(
         *,
-        customer:customer_id(*),
-        machine:machine_id(*)
+        customers!jobs_customer_id_fkey(*),
+        machines!jobs_machine_id_fkey(*)
       )
     `)
     .single();
@@ -156,7 +183,17 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_a
 
   if (updateError) throw updateError;
 
-  return data as Payment;
+  // Transform the data to match our Payment interface
+  const transformedData = {
+    ...data,
+    job: {
+      ...data.jobs,
+      customer: data.jobs.customers,
+      machine: data.jobs.machines
+    }
+  };
+
+  return transformedData as Payment;
 };
 
 // Dashboard stats
