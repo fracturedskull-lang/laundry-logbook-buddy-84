@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { UserProfile, AdminUser } from "@/types/user";
 
@@ -105,23 +104,14 @@ export const bootstrapFirstAdmin = async () => {
     throw new Error("Admin users already exist. Contact an existing admin.");
   }
 
-  // Use RPC to bypass RLS for the first admin creation
-  const { data, error } = await supabase.rpc('create_first_admin', {
-    user_id: user.user.id
-  });
+  // Direct insert for the first admin (bypassing RLS by being the first)
+  const { data, error } = await supabase
+    .from("admin_users")
+    .insert({ user_id: user.user.id })
+    .select()
+    .single();
 
-  if (error) {
-    // Fallback: try direct insert (this might fail due to RLS)
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from("admin_users")
-      .insert({ user_id: user.user.id })
-      .select()
-      .single();
-
-    if (fallbackError) throw fallbackError;
-    return fallbackData as AdminUser;
-  }
-
+  if (error) throw error;
   return data as AdminUser;
 };
 
