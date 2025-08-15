@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +48,7 @@ const Machines = () => {
         machine_number: parseInt(formData.machine_number),
         type: sanitizeTextInput(formData.type),
         capacity_kg: parseFloat(formData.capacity_kg),
+        name: `${sanitizeTextInput(formData.type)} #${formData.machine_number}`,
         status: 'available'
       };
 

@@ -58,6 +58,7 @@ const NewJob = () => {
         load_weight: parseFloat(formData.load_weight),
         detergent_used: sanitizeTextInput(formData.detergent_used),
         status: 'pending',
+        payment_status: 'pending',
         start_time: new Date().toISOString()
       };
 

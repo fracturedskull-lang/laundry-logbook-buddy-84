@@ -41,14 +41,9 @@ export const fetchMachines = async () => {
 };
 
 export const addMachine = async (machine: Omit<Machine, 'id' | 'created_at' | 'updated_at'>) => {
-  const machineData = {
-    ...machine,
-    name: `${machine.type} #${machine.machine_number}`
-  };
-
   const { data, error } = await supabase
     .from("machines")
-    .insert(machineData)
+    .insert(machine)
     .select()
     .single();
 
@@ -74,8 +69,8 @@ export const fetchJobs = async (status?: string) => {
     .from("jobs")
     .select(`
       *,
-      customer:customers(*),
-      machine:machines(*)
+      customer:customer_id(*),
+      machine:machine_id(*)
     `)
     .order("created_at", { ascending: false });
 
@@ -94,8 +89,8 @@ export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'update
     .insert(jobData)
     .select(`
       *,
-      customer:customers(*),
-      machine:machines(*)
+      customer:customer_id(*),
+      machine:machine_id(*)
     `)
     .single();
 
@@ -124,10 +119,10 @@ export const fetchPayments = async () => {
     .from("payments")
     .select(`
       *,
-      job:jobs(
+      job:job_id(
         *,
-        customer:customers(*),
-        machine:machines(*)
+        customer:customer_id(*),
+        machine:machine_id(*)
       )
     `)
     .order("created_at", { ascending: false });
@@ -143,10 +138,10 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_a
     .insert(paymentData)
     .select(`
       *,
-      job:jobs(
+      job:job_id(
         *,
-        customer:customers(*),
-        machine:machines(*)
+        customer:customer_id(*),
+        machine:machine_id(*)
       )
     `)
     .single();
