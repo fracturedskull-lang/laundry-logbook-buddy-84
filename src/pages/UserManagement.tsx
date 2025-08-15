@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Shield, UserPlus, Search, Crown } from "lucide-react";
+import { Users, Shield, Search, Crown, AlertCircle } from "lucide-react";
 import { UserProfile, AdminUser } from "@/types/user";
 import {
   fetchUserProfiles,
@@ -14,7 +14,8 @@ import {
   makeUserAdmin,
   removeUserAdmin,
   makeCurrentUserAdmin,
-  checkIsAdmin
+  checkIsAdmin,
+  checkAdminExists
 } from "@/services/userService";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -24,20 +25,32 @@ const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminExists, setAdminExists] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [userProfiles, admins, adminStatus] = await Promise.all([
-        fetchUserProfiles(),
-        fetchAdminUsers(),
-        checkIsAdmin()
+      
+      // Check if user is authenticated
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const [userProfiles, admins, adminStatus, adminExistsStatus] = await Promise.all([
+        fetchUserProfiles().catch(() => []),
+        fetchAdminUsers().catch(() => []),
+        checkIsAdmin().catch(() => false),
+        checkAdminExists().catch(() => false)
       ]);
+      
       setUsers(userProfiles);
       setAdminUsers(admins);
       setIsAdmin(adminStatus);
+      setAdminExists(adminExistsStatus);
     } catch (error) {
       console.error("Error loading user data:", error);
       toast({
@@ -52,7 +65,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const handleMakeAdmin = async (userId: string) => {
     try {
@@ -108,21 +121,24 @@ const UserManagement = () => {
     }
   };
 
-  const handleMakeCurrentUserAdmin = async () => {
+  const handleBootstrapAdmin = async () => {
     try {
+      setBootstrapping(true);
       await makeCurrentUserAdmin();
       toast({
         title: "Success",
-        description: "You are now an admin!"
+        description: "You are now the first admin!"
       });
       loadData();
     } catch (error) {
-      console.error("Error making current user admin:", error);
+      console.error("Error bootstrapping admin:", error);
       toast({
         title: "Error",
-        description: "Failed to grant admin privileges",
+        description: error instanceof Error ? error.message : "Failed to grant admin privileges",
         variant: "destructive"
       });
+    } finally {
+      setBootstrapping(false);
     }
   };
 
@@ -148,7 +164,27 @@ const UserManagement = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!user) {
+    return (
+      <div className="p-6 max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Authentication Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Please log in to access user management.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdmin && adminExists) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <Card>
@@ -158,16 +194,37 @@ const UserManagement = () => {
               Admin Access Required
             </CardTitle>
           </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              You need admin privileges to access user management. Contact an existing admin to grant you access.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdmin && !adminExists) {
+    return (
+      <div className="p-6 max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5" />
+              Setup First Admin
+            </CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              You need admin privileges to access user management.
+              No admin users exist in the system yet. As the first user, you can make yourself an admin to get started.
             </p>
-            <p className="text-sm text-muted-foreground">
-              If you're setting up the system for the first time, click the button below to make yourself an admin.
-            </p>
-            <Button onClick={handleMakeCurrentUserAdmin} className="flex items-center gap-2">
+            <Button 
+              onClick={handleBootstrapAdmin} 
+              className="flex items-center gap-2"
+              disabled={bootstrapping}
+            >
               <Crown className="h-4 w-4" />
-              Make Me Admin
+              {bootstrapping ? "Setting up..." : "Become First Admin"}
             </Button>
           </CardContent>
         </Card>
@@ -263,7 +320,7 @@ const UserManagement = () => {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleRemoveAdmin(userProfile.user_id)}
-                      disabled={userProfile.user_id === user?.id} // Prevent removing own admin
+                      disabled={userProfile.user_id === user?.id}
                     >
                       Remove Admin
                     </Button>
