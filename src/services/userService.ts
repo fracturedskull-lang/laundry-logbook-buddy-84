@@ -84,54 +84,24 @@ export const checkIsAdmin = async () => {
 
 // Check if any admin users exist in the system
 export const checkAdminExists = async () => {
-  const { data, error } = await supabase
-    .from("admin_users")
-    .select("id")
-    .limit(1);
-
+  const { data, error } = await supabase.rpc('admin_users_exist');
   if (error) throw error;
-  return data && data.length > 0;
+  return data as boolean;
 };
 
-// Bootstrap function to make the first admin
+// Bootstrap function to make the first admin using the new database function
 export const bootstrapFirstAdmin = async () => {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user.user) throw new Error("No authenticated user");
-
-  // Check if any admins exist
-  const adminExists = await checkAdminExists();
-  if (adminExists) {
-    throw new Error("Admin users already exist. Contact an existing admin.");
-  }
-
-  // Direct insert for the first admin (bypassing RLS by being the first)
-  const { data, error } = await supabase
-    .from("admin_users")
-    .insert({ user_id: user.user.id })
-    .select()
-    .single();
-
+  const { data, error } = await supabase.rpc('create_first_admin');
   if (error) throw error;
-  return data as AdminUser;
+  return data[0] as AdminUser;
 };
 
 // Make yourself admin (for initial setup)
 export const makeCurrentUserAdmin = async () => {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user.user) throw new Error("No authenticated user");
-
   try {
-    // First try the bootstrap function
     return await bootstrapFirstAdmin();
-  } catch (bootstrapError) {
-    // If bootstrap fails, try regular admin creation
-    const { data, error } = await supabase
-      .from("admin_users")
-      .insert({ user_id: user.user.id })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as AdminUser;
+  } catch (error) {
+    console.error("Error in makeCurrentUserAdmin:", error);
+    throw error;
   }
 };
