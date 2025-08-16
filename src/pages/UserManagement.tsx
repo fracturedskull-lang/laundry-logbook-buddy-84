@@ -4,27 +4,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Users, Shield, Search, Crown, AlertCircle } from "lucide-react";
-import { UserProfile, AdminUser } from "@/types/user";
+import { UserProfile, AdminUser, UserRole } from "@/types/user";
 import {
   fetchUserProfiles,
   updateUserProfile,
+  updateUserRole,
   fetchAdminUsers,
   makeUserAdmin,
   removeUserAdmin,
   makeCurrentUserAdmin,
-  checkIsAdmin,
+  checkHasAdminPermissions,
   checkAdminExists
 } from "@/services/userService";
 import { useAuth } from "@/hooks/useAuth";
+import AddUserDialog from "@/components/AddUserDialog";
 
 const UserManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [hasAdminPermissions, setHasAdminPermissions] = useState(false);
   const [adminExists, setAdminExists] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(false);
   const { toast } = useToast();
@@ -34,22 +37,21 @@ const UserManagement = () => {
     try {
       setLoading(true);
       
-      // Check if user is authenticated
       if (!user) {
         setLoading(false);
         return;
       }
 
-      const [userProfiles, admins, adminStatus, adminExistsStatus] = await Promise.all([
+      const [userProfiles, admins, adminPermissions, adminExistsStatus] = await Promise.all([
         fetchUserProfiles().catch(() => []),
         fetchAdminUsers().catch(() => []),
-        checkIsAdmin().catch(() => false),
+        checkHasAdminPermissions().catch(() => false),
         checkAdminExists().catch(() => false)
       ]);
       
       setUsers(userProfiles);
       setAdminUsers(admins);
-      setIsAdmin(adminStatus);
+      setHasAdminPermissions(adminPermissions);
       setAdminExists(adminExistsStatus);
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -121,6 +123,24 @@ const UserManagement = () => {
     }
   };
 
+  const handleUpdateUserRole = async (userId: string, role: UserRole) => {
+    try {
+      await updateUserRole(userId, role);
+      toast({
+        title: "Success",
+        description: `User role updated to ${role}`
+      });
+      loadData();
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user role",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleBootstrapAdmin = async () => {
     try {
       setBootstrapping(true);
@@ -149,6 +169,15 @@ const UserManagement = () => {
 
   const isUserAdmin = (userId: string) => {
     return adminUsers.some(admin => admin.user_id === userId);
+  };
+
+  const getRoleBadgeVariant = (role: UserRole) => {
+    switch (role) {
+      case 'owner': return 'default';
+      case 'manager': return 'secondary';
+      case 'admin': return 'outline';
+      default: return 'secondary';
+    }
   };
 
   if (loading) {
@@ -184,7 +213,7 @@ const UserManagement = () => {
     );
   }
 
-  if (!isAdmin && adminExists) {
+  if (!hasAdminPermissions && adminExists) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <Card>
@@ -204,7 +233,7 @@ const UserManagement = () => {
     );
   }
 
-  if (!isAdmin && !adminExists) {
+  if (!hasAdminPermissions && !adminExists) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <Card>
@@ -240,6 +269,7 @@ const UserManagement = () => {
           <p className="text-muted-foreground">Manage users and their access permissions</p>
         </div>
         <div className="flex items-center gap-4">
+          <AddUserDialog onUserAdded={loadData} />
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             {users.length} Users
@@ -287,6 +317,9 @@ const UserManagement = () => {
                         Admin
                       </Badge>
                     )}
+                    <Badge variant={getRoleBadgeVariant(userProfile.user_role)}>
+                      {userProfile.user_role}
+                    </Badge>
                     <Badge variant={userProfile.status === 'active' ? 'default' : 'secondary'}>
                       {userProfile.status}
                     </Badge>
@@ -297,6 +330,21 @@ const UserManagement = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Select 
+                    value={userProfile.user_role} 
+                    onValueChange={(role: UserRole) => handleUpdateUserRole(userProfile.user_id, role)}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="owner">Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
                   {userProfile.status === 'active' ? (
                     <Button
                       variant="outline"

@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { UserProfile, AdminUser } from "@/types/user";
+import { UserProfile, AdminUser, UserRole } from "@/types/user";
 
 // User Profiles
 export const fetchUserProfiles = async () => {
@@ -16,6 +17,18 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
   const { data, error } = await supabase
     .from("user_profiles")
     .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as UserProfile;
+};
+
+export const updateUserRole = async (userId: string, role: UserRole) => {
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .update({ user_role: role, updated_at: new Date().toISOString() })
     .eq("user_id", userId)
     .select()
     .single();
@@ -82,6 +95,13 @@ export const checkIsAdmin = async () => {
   return !!data;
 };
 
+// Check if current user has admin-level permissions
+export const checkHasAdminPermissions = async () => {
+  const { data, error } = await supabase.rpc('has_admin_permissions');
+  if (error) throw error;
+  return data as boolean;
+};
+
 // Check if any admin users exist in the system
 export const checkAdminExists = async () => {
   const { data, error } = await supabase.rpc('admin_users_exist');
@@ -104,4 +124,17 @@ export const makeCurrentUserAdmin = async () => {
     console.error("Error in makeCurrentUserAdmin:", error);
     throw error;
   }
+};
+
+// Create user invitation (placeholder for now)
+export const inviteUser = async (email: string, role: UserRole, fullName?: string) => {
+  // This would typically send an invitation email
+  // For now, we'll return instructions
+  return {
+    success: true,
+    message: `Invitation would be sent to ${email} with role ${role}`,
+    email,
+    role,
+    fullName
+  };
 };
