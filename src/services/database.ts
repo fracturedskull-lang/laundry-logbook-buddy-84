@@ -212,7 +212,7 @@ export const fetchDashboardStats = async () => {
   const todayPayments = payments.filter(p => p.created_at.startsWith(today));
 
   return {
-    activeJobs: jobs.filter(j => j.status === 'active' || j.status === 'pending').length,
+    activeJobs: jobs.filter(j => (j.status === 'active' || j.status === 'pending') && j.payment_status !== 'paid').length,
     availableMachines: machines.filter(m => m.status === 'available').length,
     runningMachines: machines.filter(m => m.status === 'in_use').length,
     maintenanceMachines: machines.filter(m => m.status === 'maintenance').length,
