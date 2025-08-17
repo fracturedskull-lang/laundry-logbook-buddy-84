@@ -95,7 +95,7 @@ export const checkIsAdmin = async () => {
   return !!data;
 };
 
-// Check if current user has admin-level permissions
+// Check if current user has admin-level permissions (admin, manager, or owner)
 export const checkHasAdminPermissions = async () => {
   const { data, error } = await supabase.rpc('has_admin_permissions');
   if (error) throw error;
@@ -128,6 +128,12 @@ export const makeCurrentUserAdmin = async () => {
 
 // Create user invitation (placeholder for now)
 export const inviteUser = async (email: string, role: UserRole, fullName?: string) => {
+  // Check if current user has admin permissions for user management
+  const hasPermissions = await checkHasAdminPermissions();
+  if (!hasPermissions) {
+    throw new Error("Only admin, manager, or owner can invite users");
+  }
+
   // This would typically send an invitation email
   // For now, we'll return instructions
   return {

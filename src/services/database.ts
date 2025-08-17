@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, Machine, Job, Payment } from "@/types/business";
 
-// Customers
+// Customers - Now accessible to all authenticated users
 export const fetchCustomers = async (searchQuery?: string) => {
   let query = supabase
     .from("customers")
@@ -29,7 +29,7 @@ export const addCustomer = async (customer: Omit<Customer, 'id' | 'created_at' |
   return data as Customer;
 };
 
-// Machines
+// Machines - Restricted to admin-level users
 export const fetchMachines = async () => {
   const { data, error } = await supabase
     .from("machines")
@@ -63,7 +63,7 @@ export const updateMachineStatus = async (machineId: string, status: string) => 
   return data as Machine;
 };
 
-// Jobs
+// Jobs - Now accessible to all authenticated users
 export const fetchJobs = async (status?: string) => {
   let query = supabase
     .from("jobs")
@@ -129,7 +129,7 @@ export const completeJob = async (jobId: string) => {
   return data;
 };
 
-// Payments
+// Payments - Restricted to admin-level users
 export const fetchPayments = async () => {
   const { data, error } = await supabase
     .from("payments")
@@ -219,4 +219,12 @@ export const fetchDashboardStats = async () => {
     totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
     todayRevenue: todayPayments.reduce((sum, p) => sum + p.amount, 0)
   };
+};
+
+// Utility function to format currency as South African Rands
+export const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR'
+  }).format(amount);
 };
