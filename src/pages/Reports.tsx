@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { fetchPayments } from "@/services/database";
+import { fetchPayments, formatCurrency } from "@/services/database";
 import { Payment } from "@/types/business";
 import { BarChart3, Download, TrendingUp } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
@@ -154,7 +154,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">${totalRevenue.toFixed(2)}</p>
+            <p className="text-3xl font-bold">{formatCurrency(totalRevenue)}</p>
             <p className="text-sm text-muted-foreground">All time</p>
           </CardContent>
         </Card>
@@ -174,7 +174,7 @@ const Reports = () => {
             <CardTitle>Average Transaction</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">${averageTransaction.toFixed(2)}</p>
+            <p className="text-3xl font-bold">{formatCurrency(averageTransaction)}</p>
             <p className="text-sm text-muted-foreground">Per transaction</p>
           </CardContent>
         </Card>
@@ -223,7 +223,7 @@ const Reports = () => {
               {getCurrentData().map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
                   <span className="font-medium">{item.date}</span>
-                  <span className="text-lg font-semibold">${item.amount.toFixed(2)}</span>
+                  <span className="text-lg font-semibold">{formatCurrency(item.amount)}</span>
                 </div>
               ))}
             </div>

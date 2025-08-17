@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { fetchJobs, fetchMachines, fetchDashboardStats } from "@/services/database";
+import { fetchJobs, fetchMachines, fetchDashboardStats, formatCurrency } from "@/services/database";
 import { Job, Machine, DashboardStats } from "@/types/business";
 import { 
   Users, 
@@ -93,7 +93,7 @@ const Dashboard = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.todayRevenue?.toFixed(2) || '0.00'}</div>
+            <div className="text-2xl font-bold">{formatCurrency(stats?.todayRevenue || 0)}</div>
             <p className="text-xs text-muted-foreground">Today's earnings</p>
           </CardContent>
         </Card>
@@ -104,7 +104,7 @@ const Dashboard = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.totalRevenue?.toFixed(2) || '0.00'}</div>
+            <div className="text-2xl font-bold">{formatCurrency(stats?.totalRevenue || 0)}</div>
             <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
