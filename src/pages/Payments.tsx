@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { fetchPayments, recordPayment, fetchJobs } from "@/services/database";
+import { formatCurrency } from "@/utils/currency";
 import { Payment, Job } from "@/types/business";
 import { DollarSign, Plus } from "lucide-react";
 
@@ -121,7 +122,7 @@ const Payments = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="amount">Amount ($) *</Label>
+                  <Label htmlFor="amount">Amount (ZAR) *</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -197,7 +198,7 @@ const Payments = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold">${payment.amount.toFixed(2)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(payment.amount)}</p>
                     <Badge variant="outline" className="capitalize">
                       {payment.method}
                     </Badge>
