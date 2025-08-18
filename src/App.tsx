@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
 import NewJob from "@/pages/NewJob";
 import Customers from "@/pages/Customers";
@@ -20,7 +21,7 @@ import "./App.css";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const AuthenticatedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -46,21 +47,49 @@ const App = () => {
             <Route
               path="/*"
               element={
-                <ProtectedRoute>
+                <AuthenticatedRoute>
                   <Layout>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/jobs/new" element={<NewJob />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/machines" element={<Machines />} />
-                      <Route path="/payments" element={<Payments />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/user-management" element={<UserManagement />} />
+                      <Route path="/" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/jobs/new" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <NewJob />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/customers" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <Customers />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/machines" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <Machines />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/payments" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <Payments />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/reports" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <Reports />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/user-management" element={
+                        <ProtectedRoute requireAdminPermissions>
+                          <UserManagement />
+                        </ProtectedRoute>
+                      } />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Layout>
-                </ProtectedRoute>
+                </AuthenticatedRoute>
               }
             />
           </Routes>

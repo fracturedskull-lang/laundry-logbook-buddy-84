@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Customer, Machine, Job, Payment } from "@/types/business";
+import { logAuditEvent } from "@/services/auditService";
 
 // Customers - Now accessible to all authenticated users
 export const fetchCustomers = async (searchQuery?: string) => {
@@ -26,6 +26,15 @@ export const addCustomer = async (customer: Omit<Customer, 'id' | 'created_at' |
     .single();
 
   if (error) throw error;
+  
+  // Log audit event
+  await logAuditEvent({
+    action: 'CREATE',
+    table_name: 'customers',
+    record_id: data.id,
+    new_values: data
+  });
+
   return data as Customer;
 };
 
@@ -48,10 +57,26 @@ export const addMachine = async (machine: Omit<Machine, 'id' | 'created_at' | 'u
     .single();
 
   if (error) throw error;
+  
+  // Log audit event
+  await logAuditEvent({
+    action: 'CREATE',
+    table_name: 'machines',
+    record_id: data.id,
+    new_values: data
+  });
+
   return data as Machine;
 };
 
 export const updateMachineStatus = async (machineId: string, status: string) => {
+  // Get current data for audit log
+  const { data: oldData } = await supabase
+    .from("machines")
+    .select("*")
+    .eq("id", machineId)
+    .single();
+
   const { data, error } = await supabase
     .from("machines")
     .update({ status })
@@ -60,6 +85,16 @@ export const updateMachineStatus = async (machineId: string, status: string) => 
     .single();
 
   if (error) throw error;
+  
+  // Log audit event
+  await logAuditEvent({
+    action: 'UPDATE',
+    table_name: 'machines',
+    record_id: machineId,
+    old_values: oldData,
+    new_values: data
+  });
+
   return data as Machine;
 };
 
@@ -115,6 +150,13 @@ export const createJob = async (jobData: Omit<Job, 'id' | 'created_at' | 'update
 };
 
 export const completeJob = async (jobId: string) => {
+  // Get current data for audit log
+  const { data: oldData } = await supabase
+    .from("jobs")
+    .select("*")
+    .eq("id", jobId)
+    .single();
+
   const { data, error } = await supabase
     .from("jobs")
     .update({ 
@@ -126,6 +168,16 @@ export const completeJob = async (jobId: string) => {
     .single();
 
   if (error) throw error;
+  
+  // Log audit event
+  await logAuditEvent({
+    action: 'UPDATE',
+    table_name: 'jobs',
+    record_id: jobId,
+    old_values: oldData,
+    new_values: data
+  });
+
   return data;
 };
 
@@ -182,6 +234,18 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'created_a
     .eq("id", paymentData.job_id);
 
   if (updateError) throw updateError;
+
+  // Log audit event
+  await logAuditEvent({
+    action: 'CREATE',
+    table_name: 'payments',
+    record_id: data.id,
+    new_values: {
+      ...data,
+      amount: paymentData.amount,
+      method: paymentData.method
+    }
+  });
 
   // Transform the data to match our Payment interface
   const transformedData = {
