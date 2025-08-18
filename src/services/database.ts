@@ -106,7 +106,7 @@ export const fetchJobs = async (status?: string) => {
       *,
       customers!jobs_customer_id_fkey(*),
       machines!jobs_machine_id_fkey(*),
-      user_profiles!jobs_created_by_fkey(
+      created_by_profile:user_profiles!jobs_created_by_fkey(
         full_name,
         email
       )
@@ -125,9 +125,9 @@ export const fetchJobs = async (status?: string) => {
     ...job,
     customer: job.customers,
     machine: job.machines,
-    created_by_user: job.user_profiles ? {
-      full_name: job.user_profiles.full_name || '',
-      email: job.user_profiles.email || ''
+    created_by_user: job.created_by_profile ? {
+      full_name: job.created_by_profile.full_name || '',
+      email: job.created_by_profile.email || ''
     } : undefined
   })) || [];
 
@@ -141,7 +141,7 @@ export const fetchActiveJobs = async () => {
       *,
       customers!jobs_customer_id_fkey(*),
       machines!jobs_machine_id_fkey(*),
-      user_profiles!jobs_created_by_fkey(
+      created_by_profile:user_profiles!jobs_created_by_fkey(
         full_name,
         email
       )
@@ -156,9 +156,9 @@ export const fetchActiveJobs = async () => {
     ...job,
     customer: job.customers,
     machine: job.machines,
-    created_by_user: job.user_profiles ? {
-      full_name: job.user_profiles.full_name || '',
-      email: job.user_profiles.email || ''
+    created_by_user: job.created_by_profile ? {
+      full_name: job.created_by_profile.full_name || '',
+      email: job.created_by_profile.email || ''
     } : undefined
   })) || [];
 
