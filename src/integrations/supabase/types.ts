@@ -101,6 +101,7 @@ export type Database = {
       jobs: {
         Row: {
           created_at: string | null
+          created_by: string | null
           customer_id: string
           detergent_used: string | null
           end_time: string | null
@@ -115,6 +116,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          created_by?: string | null
           customer_id: string
           detergent_used?: string | null
           end_time?: string | null
@@ -129,6 +131,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          created_by?: string | null
           customer_id?: string
           detergent_used?: string | null
           end_time?: string | null
@@ -155,6 +158,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "machines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "jobs_customer_id_fkey"
