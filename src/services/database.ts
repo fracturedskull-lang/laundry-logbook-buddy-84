@@ -98,14 +98,18 @@ export const updateMachineStatus = async (machineId: string, status: string) => 
   return data as Machine;
 };
 
-// Jobs - Now accessible to all authenticated users
+// Jobs - Now accessible to all authenticated users with enhanced details
 export const fetchJobs = async (status?: string) => {
   let query = supabase
     .from("jobs")
     .select(`
       *,
       customers!jobs_customer_id_fkey(*),
-      machines!jobs_machine_id_fkey(*)
+      machines!jobs_machine_id_fkey(*),
+      user_profiles!jobs_created_by_fkey(
+        full_name,
+        email
+      )
     `)
     .order("created_at", { ascending: false });
 
@@ -120,7 +124,36 @@ export const fetchJobs = async (status?: string) => {
   const transformedData = data.map(job => ({
     ...job,
     customer: job.customers,
-    machine: job.machines
+    machine: job.machines,
+    created_by_user: job.user_profiles
+  }));
+
+  return transformedData as Job[];
+};
+
+export const fetchActiveJobs = async () => {
+  const { data, error } = await supabase
+    .from("jobs")
+    .select(`
+      *,
+      customers!jobs_customer_id_fkey(*),
+      machines!jobs_machine_id_fkey(*),
+      user_profiles!jobs_created_by_fkey(
+        full_name,
+        email
+      )
+    `)
+    .eq("status", "active")
+    .order("start_time", { ascending: true });
+
+  if (error) throw error;
+  
+  // Transform the data to match our Job interface
+  const transformedData = data.map(job => ({
+    ...job,
+    customer: job.customers,
+    machine: job.machines,
+    created_by_user: job.user_profiles
   }));
 
   return transformedData as Job[];

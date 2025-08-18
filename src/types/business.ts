@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -36,6 +35,11 @@ export interface Job {
   notes?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  created_by_user?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 export interface Payment {

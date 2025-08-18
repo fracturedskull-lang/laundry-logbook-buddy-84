@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { fetchJobs, fetchMachines, fetchDashboardStats, formatCurrency } from "@/services/database";
+import { fetchActiveJobs, fetchMachines, fetchDashboardStats, formatCurrency } from "@/services/database";
 import { Job, Machine, DashboardStats } from "@/types/business";
 import { 
   Users, 
@@ -15,6 +14,7 @@ import {
   AlertCircle 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ActiveJobsList from "@/components/ActiveJobsList";
 
 const Dashboard = () => {
   const [activeJobs, setActiveJobs] = useState<Job[]>([]);
@@ -30,7 +30,7 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const [jobsData, machinesData, statsData] = await Promise.all([
-        fetchJobs('active'),
+        fetchActiveJobs(),
         fetchMachines(),
         fetchDashboardStats()
       ]);
@@ -43,6 +43,10 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewAllJobs = () => {
+    navigate('/jobs');
   };
 
   if (loading) {
@@ -112,42 +116,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Active Jobs */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Active Jobs ({activeJobs.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {activeJobs.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No active jobs. Create a new job to get started.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {activeJobs.slice(0, 5).map((job) => (
-                  <div key={job.id} className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <p className="font-medium">{job.customer?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {job.machine?.name} • {job.load_weight}kg • {job.detergent_used}
-                      </p>
-                    </div>
-                    <Badge variant={job.payment_status === 'paid' ? 'default' : 'secondary'}>
-                      {job.payment_status}
-                    </Badge>
-                  </div>
-                ))}
-                {activeJobs.length > 5 && (
-                  <Button variant="outline" className="w-full">
-                    View All Jobs
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ActiveJobsList jobs={activeJobs} onViewAll={handleViewAllJobs} />
 
         {/* Machine Status */}
         <Card>
