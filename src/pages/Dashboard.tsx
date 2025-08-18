@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { fetchActiveJobs, fetchMachines, fetchDashboardStats, formatCurrency } from "@/services/database";
 import { Job, Machine, DashboardStats } from "@/types/business";
 import { 

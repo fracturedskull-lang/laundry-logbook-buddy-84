@@ -121,12 +121,15 @@ export const fetchJobs = async (status?: string) => {
   if (error) throw error;
   
   // Transform the data to match our Job interface
-  const transformedData = data.map(job => ({
+  const transformedData = data?.map(job => ({
     ...job,
     customer: job.customers,
     machine: job.machines,
-    created_by_user: job.user_profiles
-  }));
+    created_by_user: job.user_profiles ? {
+      full_name: job.user_profiles.full_name || '',
+      email: job.user_profiles.email || ''
+    } : undefined
+  })) || [];
 
   return transformedData as Job[];
 };
@@ -149,12 +152,15 @@ export const fetchActiveJobs = async () => {
   if (error) throw error;
   
   // Transform the data to match our Job interface
-  const transformedData = data.map(job => ({
+  const transformedData = data?.map(job => ({
     ...job,
     customer: job.customers,
     machine: job.machines,
-    created_by_user: job.user_profiles
-  }));
+    created_by_user: job.user_profiles ? {
+      full_name: job.user_profiles.full_name || '',
+      email: job.user_profiles.email || ''
+    } : undefined
+  })) || [];
 
   return transformedData as Job[];
 };
