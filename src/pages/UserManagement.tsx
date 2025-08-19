@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ import {
   checkAdminExists
 } from "@/services/userService";
 import { useAuth } from "@/hooks/useAuth";
-import AddUserDialog from "@/components/AddUserDialog";
+import SimpleAddUserDialog from "@/components/SimpleAddUserDialog";
 
 const UserManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -269,7 +268,7 @@ const UserManagement = () => {
           <p className="text-muted-foreground">Manage users and their access permissions</p>
         </div>
         <div className="flex items-center gap-4">
-          <AddUserDialog onUserAdded={loadData} />
+          <SimpleAddUserDialog onUserAdded={loadData} />
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             {users.length} Users
